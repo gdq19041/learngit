@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="lib" path="E:/开发项目资料/JMeter资料分享/JMeter资料分享/apache-jmeter-2.12/lib/ext/ApacheJMeter_java.jar"/>
+	<classpathentry kind="lib" path="E:/开发项目资料/JMeter资料分享/JMeter资料分享/apache-jmeter-2.12/lib/ext/ApacheJMeter_core.jar"/>
+	<classpathentry kind="lib" path="E:/workspace/workspaceGao/Switch/WebRoot/WEB-INF/lib/mina-core-2.0.7.jar"/>
+	<classpathentry kind="lib" path="E:/workspace/workspaceGao/Switch/WebRoot/WEB-INF/lib/mina-integration-beans-2.0.7.jar"/>
+	<classpathentry kind="lib" path="E:/workspace/workspaceGao/Switch/WebRoot/WEB-INF/lib/mina-integration-spring-1.1.7.jar"/>
+	<classpathentry kind="lib" path="E:/workspace/workspaceGao/Switch/WebRoot/WEB-INF/lib/slf4j-api-1.6.6.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
