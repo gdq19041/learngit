@@ -22,11 +22,25 @@ public class ConstantsUtil {
 	 * 最短通信协议长度
 	 */
 	public static int MINILENGTH = 24;
+	
+	/**
+	 * 一体机最短通信协议长度
+	 */
+	public static int VERSION3_ZHIMAYUN_MINILENGTH = 38;
 
 	/**
 	 * 芝麻云协议版本号
 	 */
 	public static int VERSION_ZHIMAYUN = 0x03;
+	
+	/**
+	 * 芝麻云设备类型,增加区分通道
+	 */
+	public static int DEVTYPE_ZHIMAYUN_DIST = 0x0B;
+	/**
+	 * 芝麻云设备类型,一体机车牌识别
+	 */
+	public static int DEVTYPE_ZHIMAYUN_MACHRECOG = 0x0C;
 
 	/**
 	 * 芝麻云设备类型
@@ -59,6 +73,15 @@ public class ConstantsUtil {
 	 * 芝麻云重启命令
 	 */
 	public final static byte CMD_RESTART_ZHIMAYUN = 4;
+	/**
+	 * 芝麻云设备上发数据
+	 */
+	public final static byte CMD_DEVDATASEND_ZHIMAYUN = 9;
+
+	/**
+	 * 芝麻云后台下发数据
+	 */
+	public final static byte CMD_DATADOWN_ZHIMAYUN = 10;
 
 	/**
 	 * 芝麻云开门状态

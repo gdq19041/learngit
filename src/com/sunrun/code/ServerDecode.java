@@ -62,10 +62,31 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 			buf.position(4);
 			byte version=buf.get();
 			int devtype = buf.get();
+			devtype = 0x0C;
 			int length=0;
 			buf.position(22);
 			int cmdType=buf.get();
-			length = buf.get();
+			
+			if(version>=ConstantsUtil.VERSION_ZHIMAYUN){//芝麻云一体机设备
+				
+				if(devtype==ConstantsUtil.DEVTYPE_ZHIMAYUN_DIST||devtype==ConstantsUtil.DEVTYPE_ZHIMAYUN_MACHRECOG){
+					if(limit>=ConstantsUtil.VERSION3_ZHIMAYUN_MINILENGTH){//38为芝麻云一体机项目最小数据包长度
+						buf.position(32);
+						cmdType=buf.get();
+						buf.get();//新设备增加通道区分字节
+						length = buf.getInt();
+					}else{
+						break;
+					}
+				}else{
+					length = buf.get();
+				}
+				
+			}else if(version==0x02&&devtype==0x00&&cmdType==0x08){//手机登录指令
+				length = buf.getInt();
+			}else{
+				length = buf.get();
+			}
 			
 			buf.position(0);
 			//if(cmdType!=6&&cmdType!=7&&devtype!=0){
@@ -82,18 +103,22 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 				// 获得包校验码
 				buf.position(0);
 				byte[] b = new byte[4];
-				buf.get(b);
-				buf.position(18);
 				byte[] rb = new byte[4];
-				buf.get(rb);
-				int ccode = 0;
+				buf.get(b);
 				boolean check=true;
-				if(version>=ConstantsUtil.VERSION_ZHIMAYUN){
+				int ccode = 0;
+				if(version>=ConstantsUtil.VERSION_ZHIMAYUN&&(devtype==ConstantsUtil.DEVTYPE_ZHIMAYUN_DIST||devtype==ConstantsUtil.DEVTYPE_ZHIMAYUN_MACHRECOG)){
+					buf.position(28);
+					buf.get(rb);
+					
 					buf.position(length-4);
 					ccode=buf.getInt();//取校验码
 					check=DataHandle.checkCode(buf, length, ccode);
-					check=true;
+				}else{
+					buf.position(18);
+					buf.get(rb);
 				}
+				
 				if(Arrays.equals(ConstantsUtil.checkcode, b)&&(Arrays.equals(ConstantsUtil.rcheckcode, rb)||Arrays.equals(ConstantsUtil.checkcode, rb))&&check){
 					buf.position(0);
 					buf=doDecode(buf, out, length);
@@ -131,12 +156,72 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 			buf.position(0);
 			  byte[] b = new byte[buf.limit()];  
 			  buf.get(b); 
+			  byte[] login;
+			  boolean islogin=true;
+			  if(b.length>=5){
+				  login="alive".getBytes();
+				  
+				  for(int i=0;i<5;i++){
+					  if(b[i]!=login[i]){
+						  islogin=false;
+						  break;
+					  }
+				  }
+				  if(islogin){
+					  System.out.println("alive");
+					  if(b.length>5){
+						  	newBuf.clear();
+							newBuf.order(buf.order());
+							buf.position(5);
+			                newBuf.put(buf);
+			                newBuf.flip();
+			                buf.clear();
+							buf.put(newBuf);
+							buf.flip();
+							limit = buf.remaining();
+					  }else{
+						  buf.clear();
+					  	  buf.limit(0);
+					  }  
+				  }
+			  }
+			  islogin=true;
+			  if(b.length>=7){
+				  login="sign in".getBytes();
+				  
+				  for(int i=0;i<7;i++){
+					  if(b[i]!=login[i]){
+						  islogin=false;
+						  break;
+					  }
+				  }
+				  if(islogin){
+					  System.out.println("sign in");
+					  if(b.length>7){
+						  	newBuf.clear();
+							newBuf.order(buf.order());
+							buf.position(5);
+			                newBuf.put(buf);
+			                newBuf.flip();
+			                buf.clear();
+							buf.put(newBuf);
+							buf.flip();
+							limit = buf.remaining();
+					  }else{
+						  buf.clear();
+					  	  buf.limit(0);
+					  } 
+				  }
+			  }
+			  buf.position(0);
+			  System.out.println(465789);
+			  /*
 			  String s=new String(b);
 			  if(s.equals("sign in")||s.equals("alive")){
 				  System.out.println(s);
 			  		buf.clear();
 			  		buf.limit(0);
-			  }
+			  }*/
 	}
 	
 	private IoBuffer doDecode(IoBuffer buf, ProtocolDecoderOutput out,Integer dataLength) {
@@ -145,6 +230,7 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 		byte version=buf.get();
 		head18BData.setVersion(version);
 		byte devType=buf.get();
+		devType = 0x0C;
 		head18BData.setDevType(devType);
 		byte[] srcc = new byte[6];
 		for (int i = 0; i < 6; i++) {
@@ -156,6 +242,20 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 			srcc[i] = buf.get();
 		}
 		head18BData.setToMac(srcc);
+		
+		if(devType==ConstantsUtil.DEVTYPE_ZHIMAYUN_DIST||devType==ConstantsUtil.DEVTYPE_ZHIMAYUN_MACHRECOG){//新设备类型，增加数据发送时间
+			srcc = new byte[5];
+			for (int i = 0; i < 5; i++) {
+				srcc[i] = buf.get();
+			}
+			head18BData.setServerTime(srcc);
+			srcc = new byte[5];
+			for (int i = 0; i < 5; i++) {
+				srcc[i] = buf.get();
+			}
+			head18BData.setDevTime(srcc);
+		}
+		
 		BodyCommonData bodyCommonData=new BodyCommonData();
 		bodyCommonData.setHead18BData(head18BData);
 		bodyCommonData.setRcheckcode(buf.getInt());
@@ -172,12 +272,22 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 			}
 			bodyCommonData.setDataPackets(srcc);
 		}else {
-			buf.get();
+			
+			
 			srcc = new byte[dataLength-24];
+			if(devType==ConstantsUtil.DEVTYPE_ZHIMAYUN_DIST||devType==ConstantsUtil.DEVTYPE_ZHIMAYUN_MACHRECOG){//新设备类型，则去除通道区分类型
+				bodyCommonData.setChannelType(buf.get());
+				buf.getInt();
+				srcc = new byte[dataLength-38];
+			}else{
+				bodyCommonData.setChannelType((byte)0);
+				buf.get();
+			}
 			for (int i = 0; i < srcc.length; i++) {
 				srcc[i] = buf.get();
 			}
 			bodyCommonData.setDataPackets(srcc);
+			
 		}
 		bodyCommonData.setDataLength(dataLength);
 		/*为避免协议反复修改，因此暂不进行区分收到数据是什么，直接进行转发处理，如有需要后期可在WEB服务器根据协议进行解析具体包*/
@@ -190,8 +300,18 @@ public class ServerDecode extends CumulativeProtocolDecoder {
 	@Override
 	protected boolean doDecode(IoSession session, IoBuffer buf,
 			ProtocolDecoderOutput out) throws Exception {
+		log.info("数据接收  未处理:"+buf.getHexDump());
+		System.out.println("数据接收  未处理:"+buf.getHexDump());
 		/*buf.order(ByteOrder.LITTLE_ENDIAN);*/
 		getValid(buf, out);
 		return false;
+	}
+	
+	@Override
+	public void dispose(IoSession session) throws Exception {
+		Context ctx = (Context) session.getAttribute(CONTEXT);
+		if (ctx != null) {
+			session.removeAttribute(CONTEXT);
+		}
 	}
 }

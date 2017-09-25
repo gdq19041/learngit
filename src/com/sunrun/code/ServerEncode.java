@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.sunrun.common.util.ConstantsUtil;
 import com.sunrun.common.util.DataHandle;
 import com.sunrun.entity.BodyCommonData;
+import com.sunrun.handler.SomeServer;
 
 /**
  * 编码
@@ -45,12 +46,30 @@ public class ServerEncode extends ProtocolEncoderAdapter {
 			buffer.put(type);
 			buffer.put(data.getHead18BData().getFromMac());
 			buffer.put(data.getHead18BData().getToMac());
+			
+			String strFromMac = DataHandle.bytesToHexString(data.getHead18BData().getToMac());
+			type=(byte) (null==SomeServer.devMacMap.get(strFromMac)?ConstantsUtil.DEVTYPE_ZHIMAYUN_MACHRECOG:SomeServer.devMacMap.get(strFromMac));
+			boolean isnewdev=false;
+			if(type==ConstantsUtil.DEVTYPE_ZHIMAYUN_DIST||type==ConstantsUtil.DEVTYPE_ZHIMAYUN_MACHRECOG){//新设备类型，服务器发送的通道类型填0
+				isnewdev=true;
+			}
+			if(isnewdev){
+				buffer.put(data.getHead18BData().getServerTime());
+				buffer.put(data.getHead18BData().getDevTime());
+			}
+			
 			/* 数据包 */
 			buffer.putInt(data.getRcheckcode());
 			cmd=data.getControlType();
+			if(cmd==9){
+				System.out.println(cmd);
+			}
 			buffer.put(cmd);
 			length=data.getDataLength();
 			if(version==0x02&&type==0){
+				buffer.putInt(length);
+			}else if(isnewdev){
+				buffer.put((byte)1);
 				buffer.putInt(length);
 			}else {
 				buffer.put((byte)length);
@@ -58,10 +77,31 @@ public class ServerEncode extends ProtocolEncoderAdapter {
 			if(data.getDataPackets()!=null){
 				buffer.put(data.getDataPackets());
 			}
+			buffer.flip();
+			length = buffer.remaining();
+			
+			if(isnewdev){
+				buffer.position(34);
+			}else{
+				buffer.position(24);
+			}
+			
+			if(version==0x02&&type==0){
+				buffer.putInt(length);
+			}else if(isnewdev||version>=ConstantsUtil.VERSION_ZHIMAYUN){
+				length = length+4;
+				buffer.putInt(length);
+			}else {
+				buffer.put((byte)length);
+			}
+			
+			
 			if(version==ConstantsUtil.VERSION_ZHIMAYUN){
 				int sum=DataHandle.comuCode(buffer, length);
 				buffer.position(length-4);
 				buffer.putInt(sum);
+			}else{
+				buffer.position(length);
 			}
 		}else {
 			buffer.put(message.toString().getBytes());
@@ -72,7 +112,7 @@ public class ServerEncode extends ProtocolEncoderAdapter {
 		 * 编码的方式就是按照短信协议拼 装字符串到IoBuffer 缓冲区，然后调用ProtocolEncoderOutput的write()方法输出字节 流
 		 */
 		out.write(buffer);
-		
+		//Thread.sleep(3000);
 		if(type!=0){
 		//if(cmd!=6&&cmd!=7&&type!=0){
 			log.info("设备数据          发送:"+buffer.getHexDump());

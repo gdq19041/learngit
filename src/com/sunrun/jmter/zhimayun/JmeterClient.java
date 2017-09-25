@@ -39,7 +39,8 @@ public class JmeterClient extends AbstractJavaSamplerClient {
         result.sampleStart(); // 事务的起点  
         hostip = context.getParameter("hostip");  
         port = context.getIntParameter("port");  
-        Tasks.hostMAC=DataHandle.HexStringToBytes(context.getParameter("macAddr"));
+        macAddr = context.getParameter("macAddr");  
+        //Tasks.hostMAC=DataHandle.HexStringToBytes(context.getParameter("macAddr"));
         //Tasks.execute(hostip, port);
     
     }  
@@ -52,7 +53,8 @@ public class JmeterClient extends AbstractJavaSamplerClient {
         try {  
         	 hostip = arg.getParameter("hostip");  
              port = arg.getIntParameter("port");  
-             tasks.execute(hostip, port);
+             macAddr = arg.getParameter("macAddr");
+             tasks.execute(hostip, port,DataHandle.HexStringToBytes(macAddr));
         } catch (Exception e) {  
             success = false;  
         } finally {  

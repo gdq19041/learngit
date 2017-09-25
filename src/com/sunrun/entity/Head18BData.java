@@ -1,6 +1,9 @@
 package com.sunrun.entity;
 
 import java.io.Serializable;
+import java.util.Calendar;
+
+import com.sunrun.common.util.ConstantsUtil;
 
 public class Head18BData implements Serializable {
 
@@ -14,6 +17,9 @@ public class Head18BData implements Serializable {
 	private byte devType;// 设备类型: 手机0x00开关0x01其他待定
 	private byte[] fromMac;// 源Mac地址：6bytes 开关Mac地址
 	private byte[] toMac;// 目的Mac地址：6bytes 手机Mac地址（主动发送可写）
+	private byte[] serverTime;//服务器发送数据时间
+	private byte[] devTime;//设备发送数据时间
+	
 
 	public Head18BData() {
 
@@ -22,10 +28,12 @@ public class Head18BData implements Serializable {
 	public Head18BData(byte devType, byte[] fromMac, byte[] toMac) {
 		super();
 		this.checkcode = 0xF5F5F5F5;
-		this.version = 0x03;
+		this.version =  (byte) ConstantsUtil.VERSION_ZHIMAYUN;
 		this.devType = devType;
 		this.fromMac = fromMac;
 		this.toMac = toMac;
+		this.serverTime = new byte[5];
+		this.devTime = getTimestamp();
 	}
 	
 	public Head18BData(byte devType,byte version, byte[] fromMac, byte[] toMac) {
@@ -35,6 +43,21 @@ public class Head18BData implements Serializable {
 		this.devType = devType;
 		this.fromMac = fromMac;
 		this.toMac = toMac;
+		
+		this.serverTime = new byte[5];
+		this.devTime = getTimestamp();
+	}
+	
+	public Head18BData(byte devType, byte[] fromMac, byte[] toMac,byte[] serverTime) {
+		super();
+		this.checkcode = 0xF5F5F5F5;
+		this.version =  (byte) ConstantsUtil.VERSION_ZHIMAYUN;
+		this.devType = devType;
+		this.fromMac = fromMac;
+		this.toMac = toMac;
+		
+		this.serverTime = serverTime;
+		this.devTime = getTimestamp();
 	}
 
 	public int getCheckcode() {
@@ -77,4 +100,45 @@ public class Head18BData implements Serializable {
 		this.toMac = toMac;
 	}
 
+	public byte[] getServerTime() {
+		return serverTime;
+	}
+
+	public void setServerTime(byte[] serverTime) {
+		this.serverTime = serverTime;
+	}
+
+	public byte[] getDevTime() {
+		return devTime;
+	}
+
+	public void setDevTime(byte[] devTime) {
+		this.devTime = devTime;
+	}
+	
+	/**
+	 * 获取服务器时间
+	 * @return 字节数组 时，分，秒，毫秒/10 ，毫秒%10
+	 */
+	public static byte[] getTimestamp(){
+		Calendar Cld = Calendar.getInstance();
+		byte HH = (byte) Cld.get(Calendar.HOUR_OF_DAY);
+		byte mm = (byte) Cld.get(Calendar.MINUTE);
+		byte SS = (byte) Cld.get(Calendar.SECOND);
+		int MILL =  Cld.get(Calendar.MILLISECOND);
+		byte hm=(byte) (MILL/10);
+		byte lm=(byte) (MILL%10);
+		return new byte[]{HH,mm,SS,hm,lm};//时，分，秒，毫秒/10 ，毫秒%10
+	}
+	
+	/**
+	 * 发送获取时间字符串
+	 * @param sendTime 时间字节数组
+	 * @return 时间字符串
+	 */
+	public String getSendTimes(byte[] sendTime){
+		String sendTimes=sendTime[0]+":"+sendTime[1]+":"+sendTime[2]+":"+(sendTime[0]*10+sendTime[0]);
+		return sendTimes;
+	}
+	
 }
